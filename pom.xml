@@ -31,3 +31,971 @@
     </build>
 
 </project>
+# Working with Minikube and Nagios – DevOps Practical
+
+## 1. Prerequisites
+
+Open Docker Desktop and wait until the Docker Engine is running.
+
+Check installed tools:
+
+```bash
+docker --version
+kubectl version --client
+minikube version
+```
+
+Check Docker:
+
+```bash
+docker info
+```
+
+---
+
+# PART 1: MINIKUBE – CREATE, RUN AND SCALE PODS
+
+## Step 1: Start Minikube
+
+```bash
+minikube start --driver=docker
+```
+
+Check Minikube status:
+
+```bash
+minikube status
+```
+
+Check Kubernetes nodes:
+
+```bash
+kubectl get nodes
+```
+
+Expected: Node status should be `Ready`.
+
+## Step 2: Create an Nginx Deployment
+
+```bash
+kubectl create deployment mynginx --image=nginx
+```
+
+Check deployments:
+
+```bash
+kubectl get deployments
+```
+
+Check Pods:
+
+```bash
+kubectl get pods
+```
+
+Get detailed Pod information:
+
+```bash
+kubectl describe pod POD_NAME
+```
+
+Replace `POD_NAME` with the actual Pod name from `kubectl get pods`.
+
+## Step 3: Expose the Deployment
+
+Create a NodePort service:
+
+```bash
+kubectl expose deployment mynginx --type=NodePort --port=80 --target-port=80
+```
+
+Check services:
+
+```bash
+kubectl get services
+```
+
+Get detailed service information:
+
+```bash
+kubectl describe service mynginx
+```
+
+## Step 4: Scale the Deployment
+
+Scale from one replica to four replicas:
+
+```bash
+kubectl scale deployment mynginx --replicas=4
+```
+
+Check deployments:
+
+```bash
+kubectl get deployments
+```
+
+Check Pods:
+
+```bash
+kubectl get pods
+```
+
+Expected: Four Pods should be in `Running` status.
+
+## Step 5: Access Nginx Using Port Forwarding
+
+```bash
+kubectl port-forward service/mynginx 8081:80
+```
+
+Open the browser:
+
+```text
+http://localhost:8081
+```
+
+You should see the Nginx Welcome Page.
+
+Keep the terminal running while accessing the website. Press `Ctrl+C` to stop port forwarding.
+
+Alternative access:
+
+```bash
+minikube service mynginx
+```
+
+## Step 6: Open Minikube Dashboard
+
+```bash
+minikube dashboard
+```
+
+The Kubernetes dashboard opens in your browser.
+
+## Step 7: Useful Kubernetes Commands
+
+```bash
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl get nodes
+kubectl get all
+kubectl describe pod POD_NAME
+kubectl describe deployment mynginx
+kubectl describe service mynginx
+kubectl get events
+kubectl logs POD_NAME
+kubectl exec -it POD_NAME -- sh
+```
+
+## Step 8: Delete Kubernetes Resources
+
+Delete service:
+
+```bash
+kubectl delete service mynginx
+```
+
+Delete deployment:
+
+```bash
+kubectl delete deployment mynginx
+```
+
+Stop Minikube:
+
+```bash
+minikube stop
+```
+
+To start it again:
+
+```bash
+minikube start --driver=docker
+```
+
+---
+
+# PART 2: NGINX USING DOCKER
+
+## Step 1: Pull Nginx Image
+
+```bash
+docker pull nginx
+```
+
+## Step 2: Run Nginx Container
+
+In this practical, port `8080` was already occupied (possibly by Jenkins). Therefore, use port `8082`.
+
+```bash
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+Explanation:
+
+- `docker run` – Creates and runs a container.
+- `-d` – Runs in detached/background mode.
+- `--name nginxdemo` – Assigns a container name.
+- `-p 8082:80` – Maps host port 8082 to container port 80.
+- `nginx` – Docker image name.
+
+## Step 3: Verify Container
+
+```bash
+docker ps
+```
+
+Show all containers, including stopped ones:
+
+```bash
+docker ps -a
+```
+
+## Step 4: Access Nginx
+
+Open:
+
+```text
+http://localhost:8082
+```
+
+Expected: Welcome to nginx!
+
+## Step 5: Monitor Nginx Container
+
+View container logs:
+
+```bash
+docker logs nginxdemo
+```
+
+Follow live logs:
+
+```bash
+docker logs -f nginxdemo
+```
+
+View resource usage:
+
+```bash
+docker stats nginxdemo
+```
+
+Stop container:
+
+```bash
+docker stop nginxdemo
+```
+
+Start container:
+
+```bash
+docker start nginxdemo
+```
+
+Restart container:
+
+```bash
+docker restart nginxdemo
+```
+
+Remove container:
+
+```bash
+docker rm -f nginxdemo
+```
+
+---
+
+# PART 3: NAGIOS MONITORING USING DOCKER
+
+## Step 1: Pull Nagios Image
+
+```bash
+docker pull jasonrivers/nagios:latest
+```
+
+## Step 2: Run Nagios Container
+
+```bash
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+```
+
+Explanation:
+
+- `docker run` – Creates and runs the container.
+- `-d` – Runs in background.
+- `--name nagiosdemo` – Container name.
+- `-p 8888:80` – Maps host port 8888 to container port 80.
+- `jasonrivers/nagios:latest` – Nagios Docker image.
+
+## Step 3: Verify Nagios Container
+
+```bash
+docker ps
+```
+
+Check all containers:
+
+```bash
+docker ps -a
+```
+
+View Nagios logs:
+
+```bash
+docker logs nagiosdemo
+```
+
+Follow live logs:
+
+```bash
+docker logs -f nagiosdemo
+```
+
+## Step 4: Open Nagios Dashboard
+
+Open:
+
+```text
+http://localhost:8888
+```
+
+Login credentials for this image:
+
+```text
+Username: nagiosadmin
+Password: nagios
+```
+
+## Step 5: Explore Nagios Dashboard
+
+Check the following sections:
+
+1. Current Status → Tactical Overview
+2. Current Status → Hosts
+3. Current Status → Services
+4. Current Status → Host Groups
+5. Reports → Availability
+6. Reports → Alerts
+7. System → Process Info
+8. System → Configuration
+
+## Step 6: Stop and Start Nagios
+
+Stop:
+
+```bash
+docker stop nagiosdemo
+```
+
+Start:
+
+```bash
+docker start nagiosdemo
+```
+
+Restart:
+
+```bash
+docker restart nagiosdemo
+```
+
+Check status:
+
+```bash
+docker ps
+```
+
+Remove container:
+
+```bash
+docker rm -f nagiosdemo
+```
+
+---
+
+# PART 4: IMPORTANT DOCKER COMMANDS
+
+Check Docker version:
+
+```bash
+docker --version
+```
+
+Check running containers:
+
+```bash
+docker ps
+```
+
+Check all containers:
+
+```bash
+docker ps -a
+```
+
+List images:
+
+```bash
+docker images
+```
+
+Pull an image:
+
+```bash
+docker pull nginx
+```
+
+Run a container:
+
+```bash
+docker run -d --name mycontainer -p 8080:80 nginx
+```
+
+Stop a container:
+
+```bash
+docker stop mycontainer
+```
+
+Start a container:
+
+```bash
+docker start mycontainer
+```
+
+Restart a container:
+
+```bash
+docker restart mycontainer
+```
+
+Remove a container:
+
+```bash
+docker rm mycontainer
+```
+
+Remove a running container forcefully:
+
+```bash
+docker rm -f mycontainer
+```
+
+View logs:
+
+```bash
+docker logs mycontainer
+```
+
+Follow live logs:
+
+```bash
+docker logs -f mycontainer
+```
+
+View resource usage:
+
+```bash
+docker stats
+```
+
+Remove an image:
+
+```bash
+docker rmi IMAGE_NAME
+```
+
+---
+
+# PART 5: ERRORS ENCOUNTERED AND CORRECTED COMMANDS
+
+## Error 1: Port 8080 Already in Use
+
+### Incorrect command attempted
+
+```bash
+docker run -d --name nginxdemo -p 8080:80 nginx
+```
+
+### Error
+
+```text
+ports are not available:
+bind: Only one usage of each socket address is normally permitted
+```
+
+### Reason
+
+Port `8080` was already being used by another application, possibly Jenkins.
+
+### Correct command
+
+```bash
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+Open:
+
+```text
+http://localhost:8082
+```
+
+## Error 2: Container Name Already in Use
+
+### Command attempted
+
+```bash
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+### Error
+
+```text
+Conflict. The container name "/nginxdemo" is already in use
+```
+
+### Reason
+
+The previous failed attempt had already created a container with the same name.
+
+### Solution
+
+Check all containers:
+
+```bash
+docker ps -a
+```
+
+Remove the old container:
+
+```bash
+docker rm nginxdemo
+```
+
+Run again:
+
+```bash
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+Alternative one-command solution:
+
+```bash
+docker rm -f nginxdemo
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+## Error 3: Docker Cannot Resolve Docker Hub DNS
+
+### Command attempted
+
+```bash
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+```
+
+### Error
+
+```text
+failed to resolve reference
+lookup registry-1.docker.io: no such host
+```
+
+### Reason
+
+Docker could not resolve the Docker Hub hostname. This is a DNS or network connectivity issue.
+
+### Step 1: Check Internet
+
+```bash
+ping google.com
+```
+
+### Step 2: Check Docker Hub DNS
+
+```bash
+nslookup registry-1.docker.io
+```
+
+### Step 3: Restart Docker Desktop
+
+Open Docker Desktop → Troubleshoot → Restart Docker Desktop.
+
+If DNS still fails, check your Windows network DNS settings. On a network where public DNS is permitted, you can try:
+
+```text
+Preferred DNS: 8.8.8.8
+Alternate DNS: 8.8.4.4
+```
+
+### Step 4: Test Docker Hub Connection
+
+```bash
+docker pull hello-world
+```
+
+### Step 5: Pull Nagios Again
+
+```bash
+docker pull jasonrivers/nagios:latest
+```
+
+### Step 6: Run Nagios
+
+```bash
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+```
+
+---
+
+# PART 6: SCENARIO-BASED QUESTIONS (SBQs)
+
+## 1. Pod keeps restarting. How do you troubleshoot?
+
+```bash
+kubectl get pods
+kubectl describe pod POD_NAME
+kubectl logs POD_NAME
+kubectl logs POD_NAME --previous
+kubectl get events
+```
+
+Explanation: Check Pod events, application logs, resource limits and container exit reasons.
+
+## 2. Pod is in Pending state. What will you do?
+
+```bash
+kubectl get pods
+kubectl describe pod POD_NAME
+kubectl get nodes
+kubectl describe nodes
+kubectl get events
+```
+
+Explanation: Check CPU, memory, storage, node availability and scheduling constraints.
+
+## 3. Deployment is failing. How do you identify the problem?
+
+```bash
+kubectl get deployments
+kubectl describe deployment mynginx
+kubectl get pods
+kubectl describe pod POD_NAME
+kubectl get events
+kubectl logs POD_NAME
+```
+
+Explanation: Check image name, image pull errors, configuration and Pod events.
+
+## 4. How do you check application health?
+
+```bash
+kubectl get pods
+kubectl describe pod POD_NAME
+kubectl logs POD_NAME
+```
+
+Explanation: Check readiness and liveness probes, Pod status, application logs and resource usage.
+
+## 5. How do you roll back a failed deployment?
+
+View deployment history:
+
+```bash
+kubectl rollout history deployment/mynginx
+```
+
+Undo the latest deployment:
+
+```bash
+kubectl rollout undo deployment/mynginx
+```
+
+Check rollout status:
+
+```bash
+kubectl rollout status deployment/mynginx
+```
+
+## 6. How do you debug a running Pod?
+
+```bash
+kubectl get pods
+kubectl exec -it POD_NAME -- sh
+```
+
+Inside the container, try:
+
+```bash
+ls
+hostname
+```
+
+Exit:
+
+```bash
+exit
+```
+
+## 7. How do you expose an application to users?
+
+```bash
+kubectl expose deployment mynginx --type=NodePort --port=80 --target-port=80
+```
+
+Check service:
+
+```bash
+kubectl get services
+```
+
+Access using port forwarding:
+
+```bash
+kubectl port-forward service/mynginx 8081:80
+```
+
+Open:
+
+```text
+http://localhost:8081
+```
+
+## 8. How do you start and stop Nagios?
+
+Stop:
+
+```bash
+docker stop nagiosdemo
+```
+
+Start:
+
+```bash
+docker start nagiosdemo
+```
+
+Verify:
+
+```bash
+docker ps
+```
+
+## 9. Nagios process is unavailable. What will you do?
+
+Check container:
+
+```bash
+docker ps -a
+```
+
+Check logs:
+
+```bash
+docker logs nagiosdemo
+```
+
+Restart:
+
+```bash
+docker restart nagiosdemo
+```
+
+Check again:
+
+```bash
+docker ps
+```
+
+## 10. Newly added host is not appearing in Nagios.
+
+Check the Nagios configuration and verify:
+
+- Host definition exists.
+- Configuration file is included.
+- Host name is correct.
+- Configuration has no errors.
+- Nagios has reloaded the updated configuration.
+
+For the Docker container, inspect logs:
+
+```bash
+docker logs nagiosdemo
+```
+
+Note: Adding a host requires configuring Nagios host definitions and reloading or restarting Nagios. Merely running the container does not automatically add every machine.
+
+## 11. How do you check whether Nagios is working?
+
+```bash
+docker ps
+docker logs nagiosdemo
+```
+
+Open:
+
+```text
+http://localhost:8888
+```
+
+Check Tactical Overview, Hosts and Services.
+
+## 12. How do you monitor live Nagios logs?
+
+```bash
+docker logs -f nagiosdemo
+```
+
+Press `Ctrl+C` to stop following logs.
+
+## 13. What are the advantages of Nagios?
+
+- Open-source monitoring tool.
+- Monitors servers and network devices.
+- Monitors applications and services.
+- Provides alerts when problems occur.
+- Supports plugins.
+- Provides centralized monitoring.
+- Helps detect failures early.
+
+---
+
+# PART 7: AWS FREE TIER ACCOUNT CREATION
+
+This task is performed in the browser, not through CMD.
+
+1. Open https://aws.amazon.com/free/
+2. Click Create a Free Account.
+3. Enter your email address and account name.
+4. Verify your email using OTP.
+5. Enter contact information.
+6. Complete payment method verification.
+7. Complete mobile verification.
+8. Select the Free plan if it is offered and appropriate.
+9. Sign in to AWS Management Console.
+10. Enable MFA for account security.
+11. Check Billing and Free Tier usage.
+
+Important: AWS Free Tier offers and account terms can change. Review the current pricing and billing information before creating resources.
+
+---
+
+# PART 8: SCREENSHOT CHECKLIST
+
+Capture these screenshots for your practical record:
+
+1. Minikube running – `minikube status`.
+2. Kubernetes node – `kubectl get nodes`.
+3. Deployment – `kubectl get deployments`.
+4. Pods – `kubectl get pods`.
+5. Four replicas running.
+6. Nginx Welcome Page – `http://localhost:8081`.
+7. Minikube Dashboard.
+8. Docker Nginx container – `docker ps`.
+9. Nginx Welcome Page – `http://localhost:8082`.
+10. Nagios container – `docker ps`.
+11. Nagios dashboard – `http://localhost:8888`.
+12. Nagios Hosts page.
+13. Nagios Services page.
+14. Nagios Tactical Overview.
+15. AWS Management Console.
+
+---
+
+# PART 9: FINAL CLEANUP COMMANDS
+
+Stop and remove Nginx Docker container:
+
+```bash
+docker rm -f nginxdemo
+```
+
+Stop and remove Nagios Docker container:
+
+```bash
+docker rm -f nagiosdemo
+```
+
+Delete Kubernetes service:
+
+```bash
+kubectl delete service mynginx
+```
+
+Delete Kubernetes deployment:
+
+```bash
+kubectl delete deployment mynginx
+```
+
+Stop Minikube:
+
+```bash
+minikube stop
+```
+
+Check remaining Docker containers:
+
+```bash
+docker ps -a
+```
+
+Check Kubernetes resources:
+
+```bash
+kubectl get all
+```
+
+---
+
+# IMPORTANT PORTS USED
+
+| Application | URL | Port |
+|---|---|---|
+| Jenkins (existing) | http://localhost:8080 | 8080 |
+| Kubernetes Nginx | http://localhost:8081 | 8081 |
+| Docker Nginx | http://localhost:8082 | 8082 |
+| Nagios | http://localhost:8888 | 8888 |
+
+# QUICK PRACTICAL EXAM REVISION
+
+```bash
+# MINIKUBE
+minikube start --driver=docker
+minikube status
+kubectl get nodes
+kubectl create deployment mynginx --image=nginx
+kubectl get deployments
+kubectl get pods
+kubectl expose deployment mynginx --type=NodePort --port=80 --target-port=80
+kubectl scale deployment mynginx --replicas=4
+kubectl get pods
+kubectl get services
+kubectl port-forward service/mynginx 8081:80
+minikube dashboard
+
+# DOCKER NGINX
+docker pull nginx
+docker run -d --name nginxdemo -p 8082:80 nginx
+docker ps
+docker logs nginxdemo
+docker stats nginxdemo
+
+# NAGIOS
+docker pull jasonrivers/nagios:latest
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+docker ps
+docker logs nagiosdemo
+
+# CLEANUP
+docker rm -f nginxdemo
+docker rm -f nagiosdemo
+kubectl delete service mynginx
+kubectl delete deployment mynginx
+minikube stop
+```
+
+**Remember:** `POD_NAME` is a placeholder. Always copy the real Pod name returned by `kubectl get pods` before running commands that require it.
