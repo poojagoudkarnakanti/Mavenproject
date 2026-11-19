@@ -31,6 +31,8 @@
     </build>
 
 </project>
+
+
 # Working with Minikube and Nagios – DevOps Practical
 
 ## 1. Prerequisites
@@ -1874,5 +1876,355 @@ docker rm -f nagiosdemo
 4. The sample Nagios image does not automatically monitor separate Nginx, MySQL or Windows host services.
 5. HPA requires Metrics Server and CPU resource requests.
 6. Keep Docker Desktop running while using Minikube and Docker containers.
+========================================================================================================
+
+# DOCKER COMPOSE - WORDPRESS AND MYSQL
+
+# STEP 1: Create project folder
+mkdir wordpress-lab
+cd wordpress-lab
+code .
+
+# STEP 2: Create docker-compose.yml and paste:
+
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8081:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_DB_NAME: wordpress
+    depends_on:
+      - db
+    volumes:
+      - wordpress-data:/var/www/html
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass
+    volumes:
+      - db-data:/var/lib/mysql
+
+volumes:
+  wordpress-data:
+  db-data:
+
+# STEP 3: Pull images
+docker compose pull
+
+# STEP 4: Start containers
+docker compose up -d
+
+# STEP 5: Check containers
+docker compose ps
+
+# STEP 6: Open browser
+http://localhost:8081
+
+# Complete WordPress installation:
+# Select language, enter site title,
+# create username and password, install and login.
+
+# STEP 7: Create post
+# Dashboard -> Posts -> Add New Post
+# Title: Docker Compose Test
+# Click Publish.
+
+# STEP 8: Stop containers
+docker compose down
+
+# STEP 9: Start containers again
+docker compose up -d
+
+# STEP 10: Verify persistence
+# Open http://localhost:8081
+# Login -> Posts -> All Posts
+# Check whether Docker Compose Test exists.
+
+# STEP 11: Test recovery
+docker compose restart wordpress
+
+# STEP 12: View logs
+docker compose logs
+docker compose logs wordpress
+docker compose logs db
+
+# IMPORTANT COMMANDS
+docker compose pull
+docker compose up -d
+docker compose ps
+docker compose stop
+docker compose start
+docker compose restart
+docker compose down
+
+# EXPECTED OUTPUT:
+# WordPress and MySQL containers run successfully.
+# Website opens in browser.
+# Data remains after container recreation
+# because Docker volumes provide persistence.
+========================================================
+
+# DOCKER MULTI-CONTAINERIZATION
+# METRO RESERVATION + MYSQL
+
+# STEP 1: Open Metro Reservation project folder
+cd path\to\MetroReservation
+
+# STEP 2: Build WAR file
+mvn clean package
+
+# STEP 3: Copy WAR file from target folder
+Copy-Item .\target\MetroReservation.war .\MetroReservation.war
+
+# STEP 4: Pull Tomcat and MySQL images
+docker pull tomcat:9.0
+docker pull mysql:8.0
+
+# STEP 5: Create Docker network
+docker network create metro-network
+
+# STEP 6: Create MySQL container
+docker run -d --name metro-db --network metro-network -e MYSQL_ROOT_PASSWORD=root123 -e MYSQL_DATABASE=metrodb -e MYSQL_USER=metrouser -e MYSQL_PASSWORD=metropass -v metro-data:/var/lib/mysql mysql:8.0
+
+# STEP 7: Create Tomcat container
+docker run -d --name metro-app --network metro-network -p 8082:8080 tomcat:9.0
+
+# STEP 8: Copy WAR file into Tomcat
+docker cp .\MetroReservation.war metro-app:/usr/local/tomcat/webapps/
+
+# STEP 9: Database connection configuration in Java
+# JDBC URL:
+jdbc:mysql://metro-db:3306/metrodb
+
+# Username: metrouser
+# Password: metropass
+# Include MySQL JDBC driver in the application.
+
+# STEP 10: Check containers
+docker ps
+
+# STEP 11: Access application in browser
+http://localhost:8082/MetroReservation
+
+# STEP 12: Check logs
+docker logs metro-app
+docker logs metro-db
+
+# STEP 13: Restart containers
+docker restart metro-db
+docker restart metro-app
+
+# STEP 14: Test database persistence
+docker rm -f metro-db
+
+docker run -d --name metro-db --network metro-network -e MYSQL_ROOT_PASSWORD=root123 -e MYSQL_DATABASE=metrodb -e MYSQL_USER=metrouser -e MYSQL_PASSWORD=metropass -v metro-data:/var/lib/mysql mysql:8.0
+
+# STEP 15: Verify containers
+docker ps
+
+# STEP 16: Cleanup
+docker rm -f metro-app metro-db
+docker network rm metro-network
+
+# EXPECTED OUTPUT:
+# 1. Tomcat runs Metro Reservation application.
+# 2. MySQL runs in a separate container.
+# 3. Both containers communicate through metro-network.
+# 4. Application opens at localhost:8082.
+# 5. Docker volume preserves database data.
+
+# IMPORTANT:
+# metro-app = Tomcat application container
+# metro-db = MySQL database container
+# metro-network = Communication between containers
+# metro-data = Persistent database volume
+=============================================================
+
+# DOCKER COMPOSE - WEB APPLICATION AND NAGIOS
+
+# STEP 1: Create project folder
+mkdir nagios-lab
+cd nagios-lab
+code .
+
+# STEP 2: Create docker-compose.yml and paste:
+
+services:
+  webapp:
+    image: poojakarnakantii/ai-olms:latest
+    container_name: webapp
+    ports:
+      - "8083:8080"
+    networks:
+      - monitoring-network
+
+  nagios:
+    image: jasonrivers/nagios:latest
+    container_name: nagios
+    ports:
+      - "8084:80"
+    environment:
+      NAGIOSADMIN_USER: nagiosadmin
+      NAGIOSADMIN_PASS: nagios123
+    networks:
+      - monitoring-network
+
+networks:
+  monitoring-network:
+    driver: bridge
+
+# STEP 3: Pull images
+docker compose pull
+
+# STEP 4: Start containers
+docker compose up -d
+
+# STEP 5: Check containers
+docker compose ps
+
+# STEP 6: Access web application
+http://localhost:8083
+
+# STEP 7: Access Nagios
+http://localhost:8084
+
+# Login:
+# Username: nagiosadmin
+# Password: nagios123
+
+# STEP 8: Check logs
+docker compose logs
+docker compose logs webapp
+docker compose logs nagios
+
+# STEP 9: Restart containers
+docker compose restart
+
+# STEP 10: Stop containers
+docker compose down
+
+# IMPORTANT COMMANDS
+docker compose pull
+docker compose up -d
+docker compose ps
+docker compose logs
+docker compose restart
+docker compose stop
+docker compose start
+docker compose down
+
+# EXPECTED OUTPUT:
+# Web application runs in one container.
+# Nagios runs in another container.
+# Both containers share monitoring-network.
+# Web application: http://localhost:8083
+# Nagios: http://localhost:8084
+======================================================================
+
+
+# DOCKER COMPOSE - WEB APPLICATION AND MYSQL
+
+# STEP 1: Create project folder
+mkdir webapp-mysql
+cd webapp-mysql
+code .
+
+# STEP 2: Create docker-compose.yml and paste:
+
+services:
+  webapp:
+    image: poojakarnakantii/ai-olms:latest
+    container_name: webapp
+    ports:
+      - "8083:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: apppass
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
+
+# STEP 3: Pull images
+docker compose pull
+
+# STEP 4: Start containers
+docker compose up -d
+
+# STEP 5: Check containers
+docker compose ps
+
+# STEP 6: Access web application
+http://localhost:8083
+
+# STEP 7: Check MySQL logs
+docker compose logs db
+
+# STEP 8: Check web application logs
+docker compose logs webapp
+
+# STEP 9: Restart containers
+docker compose restart
+
+# STEP 10: Stop containers
+docker compose down
+
+# IMPORTANT COMMANDS
+docker compose pull
+docker compose up -d
+docker compose ps
+docker compose logs
+docker compose restart
+docker compose stop
+docker compose start
+docker compose down
+
+# EXPECTED OUTPUT:
+# Web application runs in one container.
+# MySQL database runs in another container.
+# Both containers communicate through app-network.
+# Database name: appdb
+# Database username: appuser
+# Database password: apppass
+# Web application: http://localhost:8083
+# MySQL host port: 3307
+=============================================================
+
+
+
+
 
 
