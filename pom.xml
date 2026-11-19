@@ -669,28 +669,6 @@ Explanation: Check Pod events, application logs, resource limits and container e
 
 ```bash
 kubectl get pods
-kubectl describe pod POD_NAME
-kubectl get nodes
-kubectl describe nodes
-kubectl get events
-```
-
-Explanation: Check CPU, memory, storage, node availability and scheduling constraints.
-
-## 3. Deployment is failing. How do you identify the problem?
-
-```bash
-kubectl get deployments
-kubectl describe deployment mynginx
-kubectl get pods
-kubectl describe pod POD_NAME
-kubectl get events
-kubectl logs POD_NAME
-```
-
-Explanation: Check image name, image pull errors, configuration and Pod events.
-
-## 4. How do you check application health?
 
 ```bash
 kubectl get pods
@@ -999,3 +977,902 @@ minikube stop
 ```
 
 **Remember:** `POD_NAME` is a placeholder. Always copy the real Pod name returned by `kubectl get pods` before running commands that require it.
+
+
+
+
+
+
+interrnalll----------------
+# DEVOPS PRACTICAL – KUBERNETES AND NAGIOS
+
+# QUESTION 3: KUBERNETES – CONTAINER DEPLOYMENT AND AUTO SCALING (20 MARKS)
+
+## Scenario: Managing Heavy Traffic in a University Digital Library
+
+### Objective
+
+Deploy an application using Kubernetes, create 2 replicas, expose the application, scale from 2 to 5 replicas, demonstrate automatic Pod recreation, perform rolling update and rollback.
+
+---
+
+## STEP 1: Start Kubernetes Cluster Using Minikube
+
+Open Docker Desktop and wait until Docker Engine is running.
+
+```bash
+minikube start --driver=docker
+```
+
+Check Minikube status:
+
+```bash
+minikube status
+```
+
+Check Kubernetes nodes:
+
+```bash
+kubectl get nodes
+```
+
+Expected output: Node should be in `Ready` state.
+
+## STEP 2: Create Deployment with 2 Replicas
+
+```bash
+kubectl create deployment library-app --image=nginx --replicas=2
+```
+
+Check deployment:
+
+```bash
+kubectl get deployments
+```
+
+Check Pods:
+
+```bash
+kubectl get pods
+```
+
+Check detailed deployment information:
+
+```bash
+kubectl describe deployment library-app
+```
+
+Expected output: 2 Pods should be running.
+
+## STEP 3: Expose Application Using Kubernetes Service
+
+Create a NodePort Service:
+
+```bash
+kubectl expose deployment library-app --type=NodePort --port=80 --target-port=80
+```
+
+Check services:
+
+```bash
+kubectl get services
+```
+
+Check detailed service information:
+
+```bash
+kubectl describe service library-app
+```
+
+Access the application using port forwarding:
+
+```bash
+kubectl port-forward service/library-app 8081:80
+```
+
+Open browser:
+
+http://localhost:8081
+
+Expected output: Nginx Welcome Page.
+
+Keep the terminal running while accessing the application. Press Ctrl+C to stop port forwarding.
+
+## STEP 4: Scale Deployment from 2 to 5 Replicas
+
+```bash
+kubectl scale deployment library-app --replicas=5
+```
+
+Verify deployment:
+
+```bash
+kubectl get deployments
+```
+
+Verify Pods:
+
+```bash
+kubectl get pods
+```
+
+Check replica details:
+
+```bash
+kubectl describe deployment library-app
+```
+
+Expected output: 5 Pods should be running.
+
+## STEP 5: Demonstrate Automatic Pod Recreation After Failure
+
+List all Pods:
+
+```bash
+kubectl get pods
+```
+
+Copy one Pod name from the output.
+
+Delete that Pod:
+
+```bash
+kubectl delete pod POD_NAME
+```
+
+Replace `POD_NAME` with the actual Pod name.
+
+Check Pods again:
+
+```bash
+kubectl get pods
+```
+
+Watch Pod recreation:
+
+```bash
+kubectl get pods -w
+```
+
+Press Ctrl+C after observing the replacement Pod.
+
+Expected output: Kubernetes automatically creates a new Pod because the Deployment controller maintains the desired replica count of 5.
+
+## STEP 6: Perform Rolling Update
+
+Update the Nginx image version:
+
+```bash
+kubectl set image deployment/library-app nginx=nginx:1.27
+```
+
+Check rollout status:
+
+```bash
+kubectl rollout status deployment/library-app
+```
+
+Check Pods:
+
+```bash
+kubectl get pods
+```
+
+Check deployment image:
+
+```bash
+kubectl describe deployment library-app
+```
+
+Expected output: Kubernetes gradually replaces old Pods with new Pods.
+
+Note: The image must be available from the registry. If image pulling fails, check internet connectivity and Pod events.
+
+## STEP 7: Check Deployment History
+
+```bash
+kubectl rollout history deployment/library-app
+```
+
+This displays deployment revision history.
+
+## STEP 8: Perform Rollback
+
+Undo the latest update:
+
+```bash
+kubectl rollout undo deployment/library-app
+```
+
+Check rollback status:
+
+```bash
+kubectl rollout status deployment/library-app
+```
+
+Check deployment:
+
+```bash
+kubectl get deployments
+```
+
+Check image version:
+
+```bash
+kubectl describe deployment library-app
+```
+
+Expected output: Previous working application version is restored.
+
+## STEP 9: Manual Scaling and Auto Scaling
+
+Manual scaling:
+
+```bash
+kubectl scale deployment library-app --replicas=5
+```
+
+Enable Metrics Server:
+
+```bash
+minikube addons enable metrics-server
+```
+
+Set CPU resource requests:
+
+```bash
+kubectl set resources deployment library-app --requests=cpu=100m,memory=64Mi
+```
+
+Create Horizontal Pod Autoscaler:
+
+```bash
+kubectl autoscale deployment library-app --cpu-percent=50 --min=2 --max=5
+```
+
+Check HPA:
+
+```bash
+kubectl get hpa
+```
+
+Check detailed HPA information:
+
+```bash
+kubectl describe hpa library-app
+```
+
+Check resource metrics:
+
+```bash
+kubectl top pods
+```
+
+Note: HPA needs Metrics Server to become ready and CPU resource requests to be configured. Automatic scaling may take time and requires sufficient CPU load.
+
+To return to manual scaling, delete HPA first:
+
+```bash
+kubectl delete hpa library-app
+```
+
+Then:
+
+```bash
+kubectl scale deployment library-app --replicas=5
+```
+
+## STEP 10: Useful Kubernetes Commands
+
+```bash
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl get nodes
+kubectl get all
+kubectl get replicasets
+kubectl get events
+kubectl describe pod POD_NAME
+kubectl describe deployment library-app
+kubectl describe service library-app
+kubectl logs POD_NAME
+kubectl rollout history deployment/library-app
+kubectl rollout status deployment/library-app
+```
+
+## STEP 11: Cleanup Kubernetes Resources
+
+Delete HPA if it exists:
+
+```bash
+kubectl delete hpa library-app
+```
+
+Delete Service:
+
+```bash
+kubectl delete service library-app
+```
+
+Delete Deployment:
+
+```bash
+kubectl delete deployment library-app
+```
+
+Check resources:
+
+```bash
+kubectl get all
+```
+
+Stop Minikube:
+
+```bash
+minikube stop
+```
+
+---
+
+# QUESTION 4: NAGIOS – INFRASTRUCTURE AND APPLICATION MONITORING (20 MARKS)
+
+## Scenario: Continuous Monitoring of Library Management Infrastructure
+
+### Objective
+
+Install Nagios using Docker, configure host and service monitoring, monitor CPU, memory, disk and uptime, configure HTTP and database checks, define WARNING and CRITICAL thresholds, and demonstrate alerts and recovery.
+
+---
+
+## STEP 1: Pull Nagios Docker Image
+
+```bash
+docker pull jasonrivers/nagios:latest
+```
+
+Check images:
+
+```bash
+docker images
+```
+
+## STEP 2: Run Nagios Container
+
+```bash
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+```
+
+Check running container:
+
+```bash
+docker ps
+```
+
+Check all containers:
+
+```bash
+docker ps -a
+```
+
+Check logs:
+
+```bash
+docker logs nagiosdemo
+```
+
+## STEP 3: Open Nagios Dashboard
+
+Open browser:
+
+http://localhost:8888
+
+Login credentials:
+
+```text
+Username: nagiosadmin
+Password: nagios
+```
+
+Explore the following sections:
+
+1. Current Status → Tactical Overview
+2. Current Status → Hosts
+3. Current Status → Services
+4. Current Status → Host Groups
+5. Reports → Availability
+6. Reports → Alerts
+7. System → Process Info
+8. System → Configuration
+
+## STEP 4: Explore Nagios Configuration Files
+
+Open shell inside the Nagios container:
+
+```bash
+docker exec -it nagiosdemo bash
+```
+
+Check configuration directory:
+
+```bash
+ls /opt/nagios/etc/
+```
+
+Check object configuration files:
+
+```bash
+ls /opt/nagios/etc/objects/
+```
+
+View main configuration:
+
+```bash
+cat /opt/nagios/etc/nagios.cfg
+```
+
+View localhost configuration:
+
+```bash
+cat /opt/nagios/etc/objects/localhost.cfg
+```
+
+Check available plugins:
+
+```bash
+ls /opt/nagios/libexec/
+```
+
+Exit container:
+
+```bash
+exit
+```
+
+## STEP 5: Configure Host Monitoring
+
+A host represents a server or machine that Nagios monitors.
+
+Example host configuration:
+
+```cfg
+define host {
+    use                     linux-server
+    host_name               library-server
+    alias                   University Library Server
+    address                 127.0.0.1
+}
+```
+
+Add this configuration to an appropriate Nagios configuration file included by `nagios.cfg`.
+
+Important: `127.0.0.1` refers to the Nagios container itself. Use the actual reachable IP address of the server being monitored.
+
+## STEP 6: Configure HTTP Service Monitoring
+
+Nagios uses the `check_http` plugin to check website availability.
+
+Example service configuration:
+
+```cfg
+define service {
+    use                     generic-service
+    host_name               library-server
+    service_description     HTTP Service
+    check_command           check_http
+}
+```
+
+The corresponding host and plugin command must exist.
+
+## STEP 7: Configure Database Service Monitoring
+
+Example MySQL service configuration:
+
+```cfg
+define service {
+    use                     generic-service
+    host_name               library-server
+    service_description     MySQL Database
+    check_command           check_mysql
+}
+```
+
+The MySQL plugin must be installed, and valid database connection settings and credentials must be configured.
+
+## STEP 8: Configure CPU Monitoring
+
+Example CPU/load monitoring service:
+
+```cfg
+define service {
+    use                     generic-service
+    host_name               library-server
+    service_description     CPU Load
+    check_command           check_load!5.0,4.0,3.0!10.0,8.0,6.0
+}
+```
+
+The `check_load` plugin monitors system load averages against configured thresholds. It does not directly measure exact CPU percentage utilization.
+
+## STEP 9: Configure Disk Monitoring
+
+Example disk monitoring service:
+
+```cfg
+define service {
+    use                     generic-service
+    host_name               library-server
+    service_description     Disk Usage
+    check_command           check_local_disk!20%!10%
+}
+```
+
+For the common `check_local_disk` command:
+
+- WARNING: Free disk space falls below 20%.
+- CRITICAL: Free disk space falls below 10%.
+
+## STEP 10: Configure Memory and Uptime Monitoring
+
+Memory monitoring requires a suitable memory plugin.
+
+Uptime monitoring requires an appropriate host or service check.
+
+Check available plugins:
+
+```bash
+docker exec -it nagiosdemo bash
+ls /opt/nagios/libexec/
+```
+
+Look for the required CPU, memory, disk and uptime plugins.
+
+Note: The plugins and host access must be configured before these checks can work. Installing Nagios alone does not automatically monitor the Windows host or every Docker container.
+
+Exit:
+
+```bash
+exit
+```
+
+## STEP 11: Understand WARNING and CRITICAL Thresholds
+
+Nagios plugin exit codes:
+
+| Exit Code | Status |
+|---|---|
+| 0 | OK |
+| 1 | WARNING |
+| 2 | CRITICAL |
+| 3 | UNKNOWN |
+
+- OK – Service is working normally.
+- WARNING – A threshold has been crossed.
+- CRITICAL – Serious problem or service failure.
+- UNKNOWN – Nagios cannot determine the status.
+
+## STEP 12: Validate Nagios Configuration
+
+Open shell:
+
+```bash
+docker exec -it nagiosdemo bash
+```
+
+Validate configuration:
+
+```bash
+/opt/nagios/bin/nagios -v /opt/nagios/etc/nagios.cfg
+```
+
+Expected output: Configuration validation completes without errors.
+
+Exit:
+
+```bash
+exit
+```
+
+Restart Nagios:
+
+```bash
+docker restart nagiosdemo
+```
+
+Check logs:
+
+```bash
+docker logs nagiosdemo
+```
+
+Important: Configuration examples must be saved in files included by `nagios.cfg`. Correct configuration errors before restarting. Use a Docker volume or bind mount if custom configuration must persist after container replacement.
+
+## STEP 13: Demonstrate Alerts and Recovery
+
+Open:
+
+http://localhost:8888
+
+Go to:
+
+Current Status → Services
+
+Observe the service status.
+
+To demonstrate recovery:
+
+1. Restore the failed service or correct the threshold condition.
+2. Allow Nagios to execute the next check.
+3. Refresh the Services page.
+4. Verify that the service returns to OK status.
+
+## STEP 14: Monitor Nagios Using Docker
+
+Check running containers:
+
+```bash
+docker ps
+```
+
+Check logs:
+
+```bash
+docker logs nagiosdemo
+```
+
+Follow live logs:
+
+```bash
+docker logs -f nagiosdemo
+```
+
+Press Ctrl+C to stop following logs.
+
+Stop Nagios:
+
+```bash
+docker stop nagiosdemo
+```
+
+Start Nagios:
+
+```bash
+docker start nagiosdemo
+```
+
+Restart Nagios:
+
+```bash
+docker restart nagiosdemo
+```
+
+Remove Nagios container:
+
+```bash
+docker rm -f nagiosdemo
+```
+
+---
+
+# COMMON ERRORS AND SOLUTIONS
+
+## ERROR 1: Port 8080 Already in Use
+
+Incorrect command:
+
+```bash
+docker run -d --name nginxdemo -p 8080:80 nginx
+```
+
+Reason: Port 8080 is already occupied, possibly by Jenkins.
+
+Correct command:
+
+```bash
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+Open:
+
+http://localhost:8082
+
+## ERROR 2: Container Name Already in Use
+
+Error:
+
+```text
+Conflict. The container name "/nginxdemo" is already in use.
+```
+
+Solution:
+
+```bash
+docker ps -a
+docker rm -f nginxdemo
+docker run -d --name nginxdemo -p 8082:80 nginx
+```
+
+## ERROR 3: Docker Hub DNS Error
+
+Error:
+
+```text
+lookup registry-1.docker.io: no such host
+```
+
+Check internet:
+
+```bash
+ping google.com
+```
+
+Check DNS:
+
+```bash
+nslookup registry-1.docker.io
+```
+
+Test Docker Hub:
+
+```bash
+docker pull hello-world
+```
+
+Restart Docker Desktop if required and resolve network/DNS issues.
+
+Pull Nagios again:
+
+```bash
+docker pull jasonrivers/nagios:latest
+```
+
+## ERROR 4: Pod ImagePullBackOff
+
+Check:
+
+```bash
+kubectl get pods
+kubectl describe pod POD_NAME
+```
+
+Solution: Verify image name, image tag and internet connectivity.
+
+## ERROR 5: HPA Shows Unknown CPU
+
+Check:
+
+```bash
+minikube addons enable metrics-server
+kubectl get pods -n kube-system
+kubectl get hpa
+kubectl top pods
+```
+
+Verify that CPU resource requests are configured.
+
+## ERROR 6: Nagios Configuration Error
+
+Check:
+
+```bash
+docker exec -it nagiosdemo bash
+/opt/nagios/bin/nagios -v /opt/nagios/etc/nagios.cfg
+```
+
+Correct configuration errors before restarting Nagios.
+
+---
+
+# SCREENSHOT CHECKLIST
+
+## Kubernetes
+
+1. Minikube running – `minikube status`.
+2. Kubernetes node – `kubectl get nodes`.
+3. Deployment with 2 replicas.
+4. Two running Pods.
+5. Kubernetes Service.
+6. Nginx Welcome Page – http://localhost:8081.
+7. Deployment scaled to 5 replicas.
+8. Pod recreation after deleting one Pod.
+9. Rolling update.
+10. Rollback.
+11. HPA output, if demonstrated.
+
+## Nagios
+
+1. Nagios Docker image.
+2. Nagios container running – `docker ps`.
+3. Nagios dashboard.
+4. Nagios Tactical Overview.
+5. Nagios Hosts page.
+6. Nagios Services page.
+7. Nagios configuration validation.
+8. HTTP check configuration.
+9. Database check configuration, if successfully configured.
+10. WARNING/CRITICAL status.
+11. Recovery to OK status.
+
+---
+
+# QUICK PRACTICAL EXAM REVISION
+
+## KUBERNETES
+
+```bash
+minikube start --driver=docker
+kubectl get nodes
+
+kubectl create deployment library-app --image=nginx --replicas=2
+kubectl get deployments
+kubectl get pods
+
+kubectl expose deployment library-app --type=NodePort --port=80 --target-port=80
+kubectl get services
+
+kubectl scale deployment library-app --replicas=5
+kubectl get pods
+
+kubectl delete pod POD_NAME
+kubectl get pods
+
+kubectl set image deployment/library-app nginx=nginx:1.27
+kubectl rollout status deployment/library-app
+
+kubectl rollout history deployment/library-app
+kubectl rollout undo deployment/library-app
+kubectl rollout status deployment/library-app
+
+kubectl delete service library-app
+kubectl delete deployment library-app
+minikube stop
+```
+
+## NAGIOS
+
+```bash
+docker pull jasonrivers/nagios:latest
+
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+
+docker ps
+docker logs nagiosdemo
+
+docker exec -it nagiosdemo bash
+
+ls /opt/nagios/etc/objects/
+ls /opt/nagios/libexec/
+
+/opt/nagios/bin/nagios -v /opt/nagios/etc/nagios.cfg
+
+exit
+
+docker restart nagiosdemo
+docker logs nagiosdemo
+
+docker stop nagiosdemo
+docker start nagiosdemo
+docker rm -f nagiosdemo
+```
+
+---
+
+# IMPORTANT PORTS
+
+| Application | URL | Port |
+|---|---|---|
+| Kubernetes application | http://localhost:8081 | 8081 |
+| Docker Nginx | http://localhost:8082 | 8082 |
+| Nagios dashboard | http://localhost:8888 | 8888 |
+| Jenkins | http://localhost:8080 | 8080 |
+
+**IMPORTANT NOTES:**
+
+1. Replace `POD_NAME` with the actual Pod name returned by `kubectl get pods`.
+2. Nagios `.cfg` examples must be added to configuration files; they are not CMD commands.
+3. Nagios plugins must be installed and configured before their checks can run.
+4. The sample Nagios image does not automatically monitor separate Nginx, MySQL or Windows host services.
+5. HPA requires Metrics Server and CPU resource requests.
+6. Keep Docker Desktop running while using Minikube and Docker containers.
+
+
