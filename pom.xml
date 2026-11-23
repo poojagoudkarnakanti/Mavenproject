@@ -2225,6 +2225,98 @@ docker compose down
 # MySQL host port: 3307
 =============================================================
 
+# ==========================================
+# DOCKER MULTI-CONTAINER PRACTICAL
+# ==========================================
+
+# STEP 1: Create project folder
+
+mkdir MultiDocker
+cd MultiDocker
+
+# STEP 2: Create index.html notepad index.html
+# Create index.html manually and paste:
+
+# <!DOCTYPE html>
+# <html>
+# <head>
+#     <title>Docker Multi Container</title>
+# </head>
+# <body>
+#     <h1>Welcome to Docker Compose!</h1>
+#     <h2>Multi Container Application</h2>
+#     <p>Nginx Web Server is running successfully.</p>
+# </body>
+# </html>
+
+
+# STEP 3: Create Dockerfile
+# Create a file named Dockerfile and paste:
+
+# FROM nginx:alpine
+# COPY index.html /usr/share/nginx/html/index.html
+# EXPOSE 80
+
+
+# STEP 4: Create docker-compose.yml
+# Create a file named docker-compose.yml and paste:
+
+# services:
+#   web:
+#     build: .
+#     container_name: webcontainer
+#     ports:
+#       - "8080:80"
+#     depends_on:
+#       - db
+
+#   db:
+#     image: mysql:8.0
+#     container_name: dbcontainer
+#     environment:
+#       MYSQL_ROOT_PASSWORD: root123
+#       MYSQL_DATABASE: college
+#     ports:
+#       - "3307:3306"
+#     volumes:
+#       - dbdata:/var/lib/mysql
+
+# volumes:
+#   dbdata:
+
+
+# STEP 5: Build and start all containers
+
+docker compose up -d --build
+
+
+# STEP 6: Check containers
+
+docker compose ps
+
+docker ps
+
+
+# STEP 7: Check MySQL logs
+
+docker logs dbcontainer
+
+
+# STEP 8: Open browser
+
+# http://localhost:8080
+
+
+# STEP 9: Stop and remove containers
+
+docker compose down
+
+
+# STEP 10: Remove containers and database volume
+# Use only when you want to delete database data too.
+
+docker compose down -v
+
 
 
 
